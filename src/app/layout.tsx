@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GoogleAnalytics } from "@/components/google-analytics";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://finance.blissbiovn.com";
 
@@ -38,5 +39,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body>{children}<GoogleAnalytics /></body></html>;
 }
