@@ -1,0 +1,3 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Privacy Policy", description: "Privacy information for Bliss Finance visitors." };
+export default function PrivacyPage() { return <main className="container legal"><a className="back" href="/">← Bliss Finance</a><p className="eyebrow">Privacy</p><h1>Privacy policy</h1><p>Bliss Finance may use analytics services to understand website usage and improve the service. We do not ask visitors to submit financial account credentials.</p><p>Third-party services may process technical information according to their own policies.</p></main>; }

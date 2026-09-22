@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/lib/mongodb";
+import { PriceChart } from "@/components/price-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,7 @@ export default async function CryptoDetailPage({ params }: Props) {
       <div className="metric"><span>Market cap</span><strong>{money(price?.marketCap)}</strong></div>
       <div className="metric"><span>24h volume</span><strong>{money(price?.volume24h)}</strong></div>
     </section>
-    <section className="history-section"><h2>Recent price snapshots</h2>
+    <section className="history-section"><h2>Price history</h2><PriceChart values={history.map((item) => Number(item.price)).reverse()} /><h2>Recent price snapshots</h2>
       {history.length === 0 ? <p className="muted">Historical data is being collected.</p> : <div className="table-wrap"><table><thead><tr><th>Time (UTC)</th><th>Price</th><th>24h change</th><th>Provider</th></tr></thead><tbody>{history.map((item) => <tr key={item._id.toString()}><td>{new Date(item.timestamp).toISOString().replace("T", " ").slice(0, 16)}</td><td>{money(item.price)}</td><td>{item.change24h == null ? "—" : `${Number(item.change24h).toFixed(2)}%`}</td><td className="muted">{item.provider}</td></tr>)}</tbody></table></div>}
     </section>
     <p className="updated">Source: {price?.provider || "market data provider"}. Data may be delayed and is not investment advice.</p>

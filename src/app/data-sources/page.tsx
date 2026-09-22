@@ -1,0 +1,3 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Data Sources", description: "Market data sources used by Bliss Finance." };
+export default function DataSourcesPage() { return <main className="container legal"><a className="back" href="/">← Bliss Finance</a><p className="eyebrow">Transparency</p><h1>Data sources</h1><p className="intro">Market data is aggregated from external providers and may be delayed.</p><h2>Current providers</h2><ul><li>CoinGecko — aggregated cryptocurrency market data.</li><li>CoinMarketCap — optional secondary market data provider.</li><li>Binance — exchange-specific ticker and volume data.</li></ul><p>Values can differ between providers because of coverage, methodology and timing.</p></main>; }
