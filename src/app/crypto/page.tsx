@@ -28,7 +28,7 @@ export default async function CryptoPage() {
     <div className="table-wrap">
       <table><thead><tr><th>Asset</th><th>Price</th><th>24h</th><th>Market cap</th><th>Source</th></tr></thead>
         <tbody>{prices.map((price) => { const asset = assetMap.get(price.assetId); const change = price.change24h as number | null; return <tr key={price._id.toString()}>
-          <td><strong>{asset?.name || "Unknown"}</strong><small>{asset?.symbol || ""}</small></td>
+          <td><a className="asset-link" href={`/crypto/${asset?.slug || ""}`}><strong>{asset?.name || "Unknown"}</strong><small>{asset?.symbol || ""}</small></a></td>
           <td>{money(price.price)}</td>
           <td className={change != null && change >= 0 ? "positive" : "negative"}>{change == null ? "—" : `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`}</td>
           <td>{money(price.marketCap)}</td><td className="muted">{price.provider}</td>
