@@ -4,12 +4,12 @@ import { getDatabase } from "@/lib/mongodb";
 import { PriceChart } from "@/components/price-chart";
 import { AffiliateCta } from "@/components/affiliate-cta";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 type Props = { params: Promise<{ symbol: string }> };
 type Profile = { industry?: string; marketCap?: number; description?: string; primaryExchange?: string; website?: string };
 
 async function load(symbol: string) { const db = await getDatabase(); const asset = await db.collection("assets").findOne({ provider: "polygon", symbol: symbol.toUpperCase(), active: true }); if (!asset) return null; const assetId = `polygon:${asset.providerId}`; const [price, history] = await Promise.all([db.collection("latest_prices").findOne({ assetId }), db.collection("price_history").find({ assetId }).sort({ timestamp: -1 }).limit(35).toArray()]); return { asset, price, history }; }
-export async function generateMetadata({ params }: Props): Promise<Metadata> { const { symbol } = await params; const result = await load(symbol); return result ? { title: `${result.asset.symbol} Stock Price`, description: `${result.asset.name} (${result.asset.symbol}) latest end-of-day stock price, volume and market data.` } : { title: "Stock not found" }; }
+export async function generateMetadata({ params }: Props): Promise<Metadata> { const { symbol } = await params; const result = await load(symbol); return result ? { title: `${result.asset.symbol} Stock Price`, description: `${result.asset.name} (${result.asset.symbol}) latest end-of-day stock price, volume and market data.`, alternates: { canonical: `/stocks/${String(result.asset.symbol).toLowerCase()}` } } : { title: "Stock not found" }; }
 
 export default async function StockDetailPage({ params }: Props) {
   const { symbol } = await params; const result = await load(symbol); if (!result) notFound();

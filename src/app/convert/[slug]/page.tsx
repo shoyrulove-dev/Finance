@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/lib/mongodb";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ amount?: string }> };
 
 async function load(slug: string) {
   const db = await getDatabase();
-  const asset = await db.collection("assets").findOne({ slug, active: true });
+  const asset = await db.collection("assets").findOne({ slug, type: "crypto", active: true });
   if (!asset) return null;
   const price = await db.collection("latest_prices").findOne({ assetId: `${asset.provider}:${asset.providerId}` });
   return { asset, price };
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await load(slug);
   if (!result) return { title: "Converter not found" };
-  return { title: `${result.asset.symbol} to USD Converter`, description: `Convert ${result.asset.name} (${result.asset.symbol}) to USD using the latest market price.` };
+  return { title: `${result.asset.symbol} to USD Converter`, description: `Convert ${result.asset.name} (${result.asset.symbol}) to USD using the latest market price.`, alternates: { canonical: `/convert/${result.asset.slug}` } };
 }
 
 export default async function ConverterPage({ params, searchParams }: Props) {

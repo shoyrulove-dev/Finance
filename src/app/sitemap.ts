@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 }
   ];
   try {
-    const assets = await (await getDatabase()).collection("assets").find({ active: true }, { projection: { slug: 1, updatedAt: 1 } }).toArray();
+    const assets = await (await getDatabase()).collection("assets").find({ type: "crypto", active: true }, { projection: { slug: 1, updatedAt: 1 } }).toArray();
     const dynamicPages = assets.flatMap((asset) => [
       { url: `${baseUrl}/crypto/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.7 },
       { url: `${baseUrl}/convert/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.5 }

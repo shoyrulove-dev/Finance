@@ -20,7 +20,6 @@ export const metadata: Metadata = {
   authors: [{ name: "Bliss Finance" }],
   creator: "Bliss Finance",
   publisher: "Bliss Finance",
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Bliss Finance",
