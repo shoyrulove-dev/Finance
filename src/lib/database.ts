@@ -1,7 +1,8 @@
-import type { Db, IndexDescription } from "mongodb";
+import type { CreateIndexesOptions, Db, IndexDescription } from "mongodb";
 import { getDatabase } from "./mongodb";
 
-const indexes: Record<string, IndexDescription[]> = {
+type AppIndex = IndexDescription & { options?: CreateIndexesOptions };
+const indexes: Record<string, AppIndex[]> = {
   assets: [
     { key: { provider: 1, providerId: 1 }, options: { unique: true } },
     { key: { slug: 1 }, options: { unique: true } },
