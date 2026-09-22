@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
+import { ensureDatabaseSchema } from "@/lib/database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,8 @@ export async function GET() {
   try {
     const db = await getDatabase();
     await db.command({ ping: 1 });
-    return NextResponse.json({ status: "ok", database: db.databaseName });
+    const schema = await ensureDatabaseSchema(db);
+    return NextResponse.json({ status: "ok", database: db.databaseName, schema });
   } catch {
     return NextResponse.json({ status: "error", database: "unavailable" }, { status: 503 });
   }
