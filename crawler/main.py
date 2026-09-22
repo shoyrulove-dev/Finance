@@ -19,6 +19,7 @@ ASSETS = [
     ("binancecoin", "BNB"), ("solana", "SOL"), ("usd-coin", "USDC"),
     ("xrp", "XRP"), ("dogecoin", "DOGE"), ("cardano", "ADA"), ("avalanche-2", "AVAX"),
 ]
+INITIAL_ASSET_LIMIT = 50
 
 
 def now() -> datetime:
@@ -40,10 +41,9 @@ async def get_json(client: httpx.AsyncClient, url: str, params: dict[str, Any], 
 
 
 async def fetch_coingecko(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-    ids = ",".join(asset[0] for asset in ASSETS)
     data = await get_json(client, "https://api.coingecko.com/api/v3/coins/markets", {
-        "vs_currency": "usd", "ids": ids, "order": "market_cap_desc",
-        "per_page": len(ASSETS), "page": 1, "sparkline": "false",
+        "vs_currency": "usd", "order": "market_cap_desc",
+        "per_page": INITIAL_ASSET_LIMIT, "page": 1, "sparkline": "false",
     })
     return [{
         "provider": "coingecko", "providerId": item["id"], "slug": item["id"],
