@@ -3,21 +3,51 @@ import { getDatabase } from "@/lib/mongodb";
 
 export const dynamic = "force-dynamic";
 
+function money(value: number | null | undefined) {
+  if (value == null) return "—";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: value < 1 ? 6 : 2, notation: value > 999_999 ? "compact" : "standard" }).format(value);
+}
+
+function percent(value: number | null | undefined) {
+  if (value == null) return "—";
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
 export default async function HomePage() {
   const db = await getDatabase();
-  const [cryptoCount, stockCount, latest] = await Promise.all([
-    db.collection("assets").countDocuments({ type: "crypto", active: true, provider: { $ne: "polygon" } }),
-    db.collection("assets").countDocuments({ type: "stock", active: true }),
-    db.collection("latest_prices").find({}).sort({ updatedAt: -1 }).limit(1).toArray()
+  const [cryptoAssets, stockAssets, latest] = await Promise.all([
+    db.collection("assets").find({ type: "crypto", active: true, provider: { $ne: "polygon" } }).toArray(),
+    db.collection("assets").find({ provider: "polygon", active: true }).toArray(),
+    db.collection("latest_prices").find({}).sort({ updatedAt: -1 }).limit(1).toArray(),
   ]);
+  const cryptoIds = cryptoAssets.map((asset) => `${asset.provider}:${asset.providerId}`);
+  const stockIds = stockAssets.map((asset) => `${asset.provider}:${asset.providerId}`);
+  const [cryptoPrices, stockPrices] = await Promise.all([
+    db.collection("latest_prices").find({ assetId: { $in: cryptoIds } }).sort({ marketCap: -1 }).limit(8).toArray(),
+    db.collection("latest_prices").find({ assetId: { $in: stockIds } }).sort({ updatedAt: -1 }).limit(6).toArray(),
+  ]);
+  const cryptoMap = new Map(cryptoAssets.map((asset) => [`${asset.provider}:${asset.providerId}`, asset]));
+  const stockMap = new Map(stockAssets.map((asset) => [`${asset.provider}:${asset.providerId}`, asset]));
+  const movers = [...cryptoPrices].filter((item) => item.change24h != null).sort((a, b) => Number(b.change24h) - Number(a.change24h));
   const latestTime = latest[0]?.updatedAt ? new Date(latest[0].updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) : "Waiting for first data sync";
   return (
-    <main className="container">
-      <p className="eyebrow">Global market data</p>
-      <h1>Understand the market clearly.</h1>
-      <p className="intro">Explore transparent crypto and US stock market data, updated by automated provider syncs.</p>
-      <div className="metric-grid"><Link className="metric asset-link" href="/crypto"><span>Crypto markets</span><strong>{cryptoCount}</strong><small>assets tracked</small></Link><Link className="metric asset-link" href="/stocks"><span>US stocks</span><strong>{stockCount}</strong><small>EOD companies</small></Link><Link className="metric asset-link" href="/search"><span>Market search</span><strong>Search</strong><small>crypto and stocks</small></Link><div className="metric"><span>Last sync</span><strong>UTC</strong><small>{latestTime}</small></div></div>
-      <div className="card"><strong>Data transparency</strong><span>Prices are sourced from external market-data providers, may be delayed, and are not investment advice.</span></div>
+    <main className="dashboard">
+      <section className="market-hero">
+        <div><p className="eyebrow">Live market dashboard</p><h1>Markets at a glance.</h1><p>Track the assets that move the global conversation — without the noise.</p></div>
+        <form className="dashboard-search" action="/search"><input name="q" placeholder="Search BTC, Apple, SOL…" aria-label="Search markets" /><button>Search</button></form>
+      </section>
+      <section className="overview-grid" aria-label="Market overview">
+        <Link href="/crypto"><span>Crypto assets</span><strong>{cryptoAssets.length}</strong><small>Tracked by market cap</small></Link>
+        <Link href="/stocks"><span>US stock coverage</span><strong>{stockAssets.length}</strong><small>End-of-day snapshots</small></Link>
+        <Link href="/crypto?view=gainers"><span>Top crypto mover</span><strong className="positive">{movers[0] ? percent(Number(movers[0].change24h)) : "—"}</strong><small>{movers[0] ? cryptoMap.get(movers[0].assetId)?.name : "No data"}</small></Link>
+        <Link href="/status"><span>Data freshness</span><strong>UTC</strong><small>{latestTime}</small></Link>
+      </section>
+      <section className="dashboard-grid">
+        <div className="dashboard-panel wide"><div className="panel-heading"><div><p className="eyebrow">Crypto</p><h2>Top crypto assets</h2></div><Link href="/crypto">View all →</Link></div><div className="market-list">{cryptoPrices.map((price, index) => { const asset = cryptoMap.get(price.assetId); const change = Number(price.change24h); return <Link href={`/crypto/${asset?.slug}`} key={price.assetId} className="market-row"><span className="rank">{index + 1}</span><span className="asset-name"><strong>{asset?.name || "Unknown"}</strong><small>{asset?.symbol}</small></span><span>{money(Number(price.price))}</span><span className={change >= 0 ? "positive" : "negative"}>{percent(change)}</span></Link>; })}</div></div>
+        <div className="dashboard-panel movers"><div className="panel-heading"><div><p className="eyebrow">Momentum</p><h2>Top movers</h2></div><Link href="/crypto?view=gainers">All movers →</Link></div>{movers.slice(0, 5).map((price) => { const asset = cryptoMap.get(price.assetId); return <Link href={`/crypto/${asset?.slug}`} key={price.assetId} className="mover-row"><span><strong>{asset?.symbol}</strong><small>{asset?.name}</small></span><b className="positive">{percent(Number(price.change24h))}</b></Link>; })}</div>
+        <div className="dashboard-panel stocks"><div className="panel-heading"><div><p className="eyebrow">Equities</p><h2>US stocks</h2></div><Link href="/stocks">View all →</Link></div><div className="market-list">{stockPrices.map((price) => { const asset = stockMap.get(price.assetId); const change = price.change24h == null ? null : Number(price.change24h); return <Link href={`/stocks/${String(asset?.symbol).toLowerCase()}`} key={price.assetId} className="market-row stock-row"><span className="asset-name"><strong>{asset?.name || "Unknown"}</strong><small>{asset?.symbol}</small></span><span>{money(Number(price.price))}</span><span className={change != null && change >= 0 ? "positive" : "negative"}>{percent(change)}</span></Link>; })}</div></div>
+        <aside className="dashboard-panel trust"><p className="eyebrow">Built for clarity</p><h2>Market data, not market hype.</h2><p>Sources, timestamps and disclaimers are visible throughout Bliss Finance.</p><Link href="/data-sources">How data works →</Link><Link href="/disclaimer">Read disclaimer →</Link></aside>
+      </section>
     </main>
   );
 }
