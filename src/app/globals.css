@@ -24,6 +24,11 @@ td small { display: block; color: var(--muted); margin-top: 4px; text-transform:
 .chart-empty { padding: 28px; color: var(--muted); background: var(--panel); border: 1px solid #20324b; border-radius: 14px; margin: 24px 0 44px; }
 @media (max-width: 760px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } }
 .legal { max-width: 780px; } .legal h2 { margin-top: 42px; } .legal p, .legal li { color: var(--muted); line-height: 1.8; font-size: 17px; } .legal li { margin: 10px 0; }
+.converter-form { margin-top: 40px; max-width: 620px; } .converter-form label { display: block; color: var(--muted); margin-bottom: 10px; }
+.converter-form div { display: flex; gap: 10px; } .converter-form input { flex: 1; min-width: 0; padding: 15px; color: var(--text); background: var(--panel); border: 1px solid #314762; border-radius: 10px; font-size: 17px; }
+.converter-form button { padding: 0 22px; color: #07111f; background: var(--accent); border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.conversion-result { display: flex; flex-direction: column; gap: 10px; margin: 28px 0 48px; padding: 26px; max-width: 620px; background: var(--panel); border: 1px solid #20324b; border-radius: 14px; }
+.conversion-result strong { font-size: 32px; } .conversion-result small { color: var(--muted); }
 .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; }
 h1 { max-width: 700px; font-size: clamp(42px, 8vw, 76px); line-height: 1.02; margin: 18px 0; }
 .intro { color: var(--muted); font-size: 20px; max-width: 560px; line-height: 1.6; }

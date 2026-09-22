@@ -14,6 +14,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   try {
     const assets = await (await getDatabase()).collection("assets").find({ active: true }, { projection: { slug: 1, updatedAt: 1 } }).toArray();
-    return staticPages.concat(assets.map((asset) => ({ url: `${baseUrl}/crypto/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.7 })));
+    const dynamicPages = assets.flatMap((asset) => [
+      { url: `${baseUrl}/crypto/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.7 },
+      { url: `${baseUrl}/convert/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.5 }
+    ]);
+    return staticPages.concat(dynamicPages);
   } catch { return staticPages; }
 }
