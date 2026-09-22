@@ -4,6 +4,14 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial,
 .container { max-width: 960px; margin: 0 auto; padding: 96px 24px; }
 .brand { margin-bottom: 82px; }
 .brand img { display: block; }
+.back { color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 64px; }
+.table-wrap { overflow-x: auto; margin-top: 42px; background: var(--panel); border: 1px solid #20324b; border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; min-width: 720px; }
+th, td { text-align: left; padding: 18px 20px; border-bottom: 1px solid #20324b; }
+th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+td small { display: block; color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+.positive { color: var(--accent); } .negative { color: #ff8e9e; } .muted, .updated { color: var(--muted); }
+.updated { font-size: 13px; margin-top: 18px; }
 .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; }
 h1 { max-width: 700px; font-size: clamp(42px, 8vw, 76px); line-height: 1.02; margin: 18px 0; }
 .intro { color: var(--muted); font-size: 20px; max-width: 560px; line-height: 1.6; }
