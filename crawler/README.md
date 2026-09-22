@@ -5,11 +5,14 @@ The crawler normalizes market data from CoinGecko, CoinMarketCap and Binance bef
 ## Run
 
 ```bash
-python -m venv .venv
+py -3.12 -m venv .venv
 .venv\\Scripts\\activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 copy .env.example .env
 python main.py
 ```
+
+On Windows, use Python 3.12 for this crawler. Python 3.14 may currently have pip/package compatibility issues with some dependencies.
 
 The first run uses CoinGecko's public endpoint and seeds the initial crypto assets. CoinMarketCap is optional and only used when `COINMARKETCAP_API_KEY` is configured.
