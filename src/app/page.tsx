@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
+import { NativeAd } from "@/components/native-ad";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function HomePage() {
     <section className="overview-grid" aria-label="Market overview">
       <Link href="/crypto"><span>Crypto assets</span><strong>{cryptoAssets.length}</strong><small>Tracked by market cap</small></Link><Link href="/stocks"><span>US stock coverage</span><strong>{stockAssets.length}</strong><small>End-of-day snapshots</small></Link><Link href="/crypto?view=gainers"><span>Top crypto mover</span><strong className="positive">{movers[0] ? percent(Number(movers[0].change24h)) : "-"}</strong><small>{movers[0] ? cryptoMap.get(movers[0].assetId)?.name : "No data"}</small></Link><Link href="/status"><span>Data freshness</span><strong>UTC</strong><small>{latestTime}</small></Link>
     </section>
+    <NativeAd />
     <section className="dashboard-grid">
       <div className="dashboard-panel wide"><div className="panel-heading"><div><p className="eyebrow">Crypto</p><h2>Top crypto assets</h2></div><Link href="/crypto">View all -&gt;</Link></div><div className="market-list">{cryptoPrices.map((price, index) => { const asset = cryptoMap.get(price.assetId); const change = Number(price.change24h); return <Link href={`/crypto/${asset?.slug}`} key={price.assetId} className="market-row"><span className="rank">{index + 1}</span><span className="asset-name"><strong>{asset?.name || "Unknown"}</strong><small>{asset?.symbol}</small></span><span>{money(Number(price.price))}</span><span className={change >= 0 ? "positive" : "negative"}>{percent(change)}</span></Link>; })}</div></div>
       <div className="dashboard-panel movers"><div className="panel-heading"><div><p className="eyebrow">Momentum</p><h2>Top movers</h2></div><Link href="/crypto?view=gainers">All movers -&gt;</Link></div>{movers.slice(0, 5).map((price) => { const asset = cryptoMap.get(price.assetId); return <Link href={`/crypto/${asset?.slug}`} key={price.assetId} className="mover-row"><span><strong>{asset?.symbol}</strong><small>{asset?.name}</small></span><b className="positive">{percent(Number(price.change24h))}</b></Link>; })}</div>
