@@ -16,7 +16,7 @@ type Props = { searchParams: Promise<{ view?: string }> };
 export default async function CryptoPage({ searchParams }: Props) {
   const db = await getDatabase();
   const view = (await searchParams).view || "market-cap";
-  const assets = await db.collection("assets").find({ active: true, type: "crypto" }).toArray();
+  const assets = await db.collection("assets").find({ active: true, type: "crypto", provider: { $ne: "polygon" } }).toArray();
   const assetMap = new Map(assets.map((asset) => [`${asset.provider}:${asset.providerId}`, asset]));
   const sort: Record<string, 1 | -1> = view === "gainers" ? { change24h: -1 } : view === "losers" ? { change24h: 1 } : { marketCap: -1 };
   const prices = await db.collection("latest_prices").find({ assetId: { $in: [...assetMap.keys()] } }).sort(sort).limit(100).toArray();

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const db = await getDatabase();
   const [cryptoCount, stockCount, latest] = await Promise.all([
-    db.collection("assets").countDocuments({ type: "crypto", active: true }),
+    db.collection("assets").countDocuments({ type: "crypto", active: true, provider: { $ne: "polygon" } }),
     db.collection("assets").countDocuments({ type: "stock", active: true }),
     db.collection("latest_prices").find({}).sort({ updatedAt: -1 }).limit(1).toArray()
   ]);
