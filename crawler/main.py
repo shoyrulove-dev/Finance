@@ -20,6 +20,7 @@ ASSETS = [
     ("xrp", "XRP"), ("dogecoin", "DOGE"), ("cardano", "ADA"), ("avalanche-2", "AVAX"),
 ]
 INITIAL_ASSET_LIMIT = 50
+STOCKS = [("AAPL", "Apple"), ("MSFT", "Microsoft"), ("NVDA", "NVIDIA"), ("AMZN", "Amazon"), ("GOOGL", "Alphabet"), ("META", "Meta Platforms"), ("TSLA", "Tesla"), ("BRK.B", "Berkshire Hathaway"), ("JPM", "JPMorgan Chase"), ("V", "Visa")]
 
 
 def now() -> datetime:
@@ -80,6 +81,20 @@ async def fetch_binance(client: httpx.AsyncClient) -> list[dict[str, Any]]:
             for item in data if item["symbol"].endswith("USDT") and item["symbol"][:-4] in symbols]
 
 
+async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]]:
+    key = os.getenv("POLYGON_API_KEY")
+    if not key:
+        return []
+    rows = []
+    for symbol, name in STOCKS:
+        data = await get_json(client, f"https://api.polygon.io/v2/aggs/ticker/{symbol}/prev", {"adjusted": "true", "apiKey": key})
+        result = (data.get("results") or [{}])[0]
+        if result.get("c") is not None:
+            rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": name, "type": "stock", "active": True, "price": result["c"], "change24h": None, "volume24h": result.get("v"), "fetchedAt": now()})
+        await asyncio.sleep(12)
+    return rows
+
+
 def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
     uri = os.getenv("MONGODB_URI")
     if not uri:
@@ -122,6 +137,10 @@ async def main() -> None:
             raise RuntimeError("No aggregated market data provider returned data")
         write_to_mongodb(rows)
         log.info("Stored %s normalized asset records", len(rows))
+        stocks = await fetch_polygon_stocks(client)
+        if stocks:
+            write_to_mongodb(stocks)
+            log.info("Stored %s stock records", len(stocks))
 
 
 if __name__ == "__main__":
