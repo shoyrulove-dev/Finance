@@ -28,10 +28,9 @@ export async function ensureDatabaseSchema(db?: Db) {
   const database = db || await getDatabase();
   for (const [collectionName, collectionIndexes] of Object.entries(indexes)) {
     const collection = database.collection(collectionName);
-    await collectionIndexes.reduce(
-      (promise, index) => promise.then(() => collection.createIndex(index.key, index.options)),
-      Promise.resolve()
-    );
+    for (const index of collectionIndexes) {
+      await collection.createIndex(index.key, index.options);
+    }
   }
   return { database: database.databaseName, collections: Object.keys(indexes) };
 }
