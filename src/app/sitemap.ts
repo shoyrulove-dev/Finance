@@ -19,6 +19,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${baseUrl}/crypto/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.7 },
       { url: `${baseUrl}/convert/${asset.slug}`, lastModified: asset.updatedAt || new Date(), changeFrequency: "hourly" as const, priority: 0.5 }
     ]);
-    return staticPages.concat(dynamicPages);
+    const stocks = await (await getDatabase()).collection("assets").find({ type: "stock", active: true }, { projection: { symbol: 1, updatedAt: 1 } }).toArray();
+    const stockPages = stocks.map((stock) => ({ url: `${baseUrl}/stocks/${String(stock.symbol).toLowerCase()}`, lastModified: stock.updatedAt || new Date(), changeFrequency: "daily" as const, priority: 0.6 }));
+    return staticPages.concat(dynamicPages, stockPages);
   } catch { return staticPages; }
 }
