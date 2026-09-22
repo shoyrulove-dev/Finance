@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Crypto Prices and Market Data",
   description: "Latest cryptocurrency prices, market caps, trading volume and 24-hour changes."
 };
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function money(value: number | null | undefined) {
   if (value == null) return "—";

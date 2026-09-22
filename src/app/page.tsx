@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
 import { NativeAd } from "@/components/native-ad";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function money(value: number | null | undefined) {
   if (value == null) return "-";

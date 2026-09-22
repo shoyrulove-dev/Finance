@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getDatabase } from "@/lib/mongodb";
 
 export const metadata: Metadata = { title: "US Stock Prices and Market Data", description: "End-of-day prices and market data for popular US stocks." };
-export const dynamic = "force-dynamic";
+export const revalidate = 900;
 
 export default async function StocksPage() {
   const db = await getDatabase();
