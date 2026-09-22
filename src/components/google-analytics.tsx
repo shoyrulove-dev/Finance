@@ -16,6 +16,7 @@ export function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){window.dataLayer.push(arguments);}
           gtag('js', new Date());
+          gtag('consent', 'default', { analytics_storage: 'denied' });
           gtag('config', '${measurementId}');
         `}
       </Script>

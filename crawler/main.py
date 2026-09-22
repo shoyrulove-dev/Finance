@@ -19,8 +19,8 @@ ASSETS = [
     ("binancecoin", "BNB"), ("solana", "SOL"), ("usd-coin", "USDC"),
     ("xrp", "XRP"), ("dogecoin", "DOGE"), ("cardano", "ADA"), ("avalanche-2", "AVAX"),
 ]
-INITIAL_ASSET_LIMIT = 50
-STOCKS = [("AAPL", "Apple"), ("MSFT", "Microsoft"), ("NVDA", "NVIDIA"), ("AMZN", "Amazon"), ("GOOGL", "Alphabet"), ("META", "Meta Platforms"), ("TSLA", "Tesla"), ("BRK.B", "Berkshire Hathaway"), ("JPM", "JPMorgan Chase"), ("V", "Visa")]
+INITIAL_ASSET_LIMIT = 100
+STOCKS = [("AAPL", "Apple"), ("MSFT", "Microsoft"), ("NVDA", "NVIDIA"), ("AMZN", "Amazon"), ("GOOGL", "Alphabet"), ("META", "Meta Platforms"), ("TSLA", "Tesla"), ("BRK.B", "Berkshire Hathaway"), ("JPM", "JPMorgan Chase"), ("V", "Visa"), ("WMT", "Walmart"), ("LLY", "Eli Lilly"), ("AVGO", "Broadcom"), ("ORCL", "Oracle"), ("NFLX", "Netflix")]
 
 
 def now() -> datetime:
@@ -96,7 +96,16 @@ async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]
             previous = bars[-2].get("c") if len(bars) > 1 else None
             change = ((result["c"] - previous) / previous * 100) if previous else None
             history = [{"price": bar.get("c"), "volume24h": bar.get("v"), "timestamp": datetime.fromtimestamp(bar["t"] / 1000, timezone.utc)} for bar in bars if bar.get("c") is not None]
-            rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": name, "type": "stock", "active": True, "price": result["c"], "change24h": change, "volume24h": result.get("v"), "fetchedAt": now(), "history": history})
+            profile: dict[str, Any] = {}
+            detail: dict[str, Any] = {}
+            try:
+                detail = await get_json(client, f"https://api.massive.com/v3/reference/tickers/{symbol}", {"apiKey": key})
+                detail = detail.get("results") or {}
+                branding = detail.get("branding") or {}
+                profile = {"description": detail.get("description"), "marketCap": detail.get("market_cap"), "industry": detail.get("sic_description"), "primaryExchange": detail.get("primary_exchange"), "website": detail.get("homepage_url"), "logo": branding.get("logo_url")}
+            except Exception as error:
+                log.warning("Massive profile unavailable for %s: %s", symbol, error)
+            rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": detail.get("name", name), "type": "stock", "active": True, "price": result["c"], "change24h": change, "marketCap": profile.get("marketCap"), "volume24h": result.get("v"), "fetchedAt": now(), "history": history, "profile": profile})
         await asyncio.sleep(12)
     return rows
 
@@ -113,7 +122,7 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
         asset_id = f"{row['provider']}:{row['providerId']}"
         asset_ops.append(UpdateOne({"provider": row["provider"], "providerId": row["providerId"]}, {"$set": {
             "slug": row.get("slug", row["providerId"]), "symbol": row.get("symbol"), "name": row.get("name", row.get("symbol")),
-            "type": row.get("type", "crypto"), "active": True, "updatedAt": timestamp,
+            "type": row.get("type", "crypto"), "active": True, "profile": row.get("profile", {}), "updatedAt": timestamp,
         }}, upsert=True))
         price = {"assetId": asset_id, "provider": row["provider"], "price": row.get("price"),
                  "change24h": row.get("change24h"), "marketCap": row.get("marketCap"),
