@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const db = await getDatabase();
-    const prices = await db.collection("latest_prices").find({}).sort({ marketCap: -1, updatedAt: -1 }).limit(100).toArray();
-    const assets = await db.collection("assets").find({ active: true }).toArray();
+    const assets = await db.collection("assets").find({ active: true, type: "crypto" }).toArray();
     const assetMap = new Map(assets.map((asset) => [`${asset.provider}:${asset.providerId}`, asset]));
+    const prices = await db.collection("latest_prices").find({ assetId: { $in: [...assetMap.keys()] } }).sort({ marketCap: -1, updatedAt: -1 }).limit(100).toArray();
     const data = prices.map((price) => {
       const asset = assetMap.get(price.assetId);
       return {

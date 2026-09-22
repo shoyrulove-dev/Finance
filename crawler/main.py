@@ -107,7 +107,7 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
         asset_id = f"{row['provider']}:{row['providerId']}"
         asset_ops.append(UpdateOne({"provider": row["provider"], "providerId": row["providerId"]}, {"$set": {
             "slug": row.get("slug", row["providerId"]), "symbol": row.get("symbol"), "name": row.get("name", row.get("symbol")),
-            "type": "crypto", "active": True, "updatedAt": timestamp,
+            "type": row.get("type", "crypto"), "active": True, "updatedAt": timestamp,
         }}, upsert=True))
         price = {"assetId": asset_id, "provider": row["provider"], "price": row.get("price"),
                  "change24h": row.get("change24h"), "marketCap": row.get("marketCap"),

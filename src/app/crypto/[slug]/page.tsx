@@ -42,8 +42,10 @@ export default async function CryptoDetailPage({ params }: Props) {
   if (!result) notFound();
   const { asset, price, history } = result;
   const change = price?.change24h as number | null;
+  const schema = { "@context": "https://schema.org", "@type": "FinancialProduct", name: asset.name, tickerSymbol: asset.symbol, offers: price?.price ? { "@type": "Offer", price: price.price, priceCurrency: "USD", availability: "https://schema.org/InStock" } : undefined };
 
   return <main className="container">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
     <a className="back" href="/crypto">← All crypto markets</a>
     <p className="eyebrow">Crypto asset</p>
     <h1>{asset.name}</h1>
