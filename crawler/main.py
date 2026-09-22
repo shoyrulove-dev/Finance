@@ -82,12 +82,12 @@ async def fetch_binance(client: httpx.AsyncClient) -> list[dict[str, Any]]:
 
 
 async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-    key = os.getenv("POLYGON_API_KEY")
+    key = os.getenv("MASSIVE_API_KEY") or os.getenv("POLYGON_API_KEY")
     if not key:
         return []
     rows = []
     for symbol, name in STOCKS:
-        data = await get_json(client, f"https://api.polygon.io/v2/aggs/ticker/{symbol}/prev", {"adjusted": "true", "apiKey": key})
+        data = await get_json(client, f"https://api.massive.com/v2/aggs/ticker/{symbol}/prev", {"adjusted": "true", "apiKey": key})
         result = (data.get("results") or [{}])[0]
         if result.get("c") is not None:
             rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": name, "type": "stock", "active": True, "price": result["c"], "change24h": None, "volume24h": result.get("v"), "fetchedAt": now()})

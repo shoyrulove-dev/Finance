@@ -20,5 +20,5 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MONGODB_DB: finance
           COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
-          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY || secrets.POLYGON_API_KEY }}
           BINANCE_BASE_URL: https://api.binance.com
