@@ -20,6 +20,7 @@ ASSETS = [
     ("xrp", "XRP"), ("dogecoin", "DOGE"), ("cardano", "ADA"), ("avalanche-2", "AVAX"),
 ]
 INITIAL_ASSET_LIMIT = 100
+HISTORICAL_CRYPTO_LIMIT = 20
 STOCKS = [("AAPL", "Apple"), ("MSFT", "Microsoft"), ("NVDA", "NVIDIA"), ("AMZN", "Amazon"), ("GOOGL", "Alphabet"), ("META", "Meta Platforms"), ("TSLA", "Tesla"), ("BRK.B", "Berkshire Hathaway"), ("JPM", "JPMorgan Chase"), ("V", "Visa"), ("WMT", "Walmart"), ("LLY", "Eli Lilly"), ("AVGO", "Broadcom"), ("ORCL", "Oracle"), ("NFLX", "Netflix")]
 
 
@@ -53,6 +54,20 @@ async def fetch_coingecko(client: httpx.AsyncClient) -> list[dict[str, Any]]:
         "marketCap": item.get("market_cap"), "volume24h": item.get("total_volume"),
         "image": item.get("image"), "fetchedAt": now(),
     } for item in data]
+
+
+async def enrich_crypto_history(client: httpx.AsyncClient, rows: list[dict[str, Any]]) -> None:
+    """Backfill daily history for leading assets once per day without exhausting public API limits."""
+    if now().hour != 3:
+        return
+    for row in rows[:HISTORICAL_CRYPTO_LIMIT]:
+        try:
+            data = await get_json(client, f"https://api.coingecko.com/api/v3/coins/{row['providerId']}/market_chart", {"vs_currency": "usd", "days": "90", "interval": "daily"})
+            row["history"] = [{"price": point[1], "timestamp": datetime.fromtimestamp(point[0] / 1000, timezone.utc)} for point in data.get("prices", []) if point[1] is not None]
+            log.info("Backfilled %s daily points for %s", len(row["history"]), row["symbol"])
+        except Exception as error:
+            log.warning("History unavailable for %s: %s", row["providerId"], error)
+        await asyncio.sleep(4)
 
 
 async def fetch_coinmarketcap(client: httpx.AsyncClient) -> list[dict[str, Any]]:
@@ -153,6 +168,7 @@ async def main() -> None:
             rows = await fetch_coinmarketcap(client)
         if not rows:
             raise RuntimeError("No aggregated market data provider returned data")
+        await enrich_crypto_history(client, rows)
         write_to_mongodb(rows)
         log.info("Stored %s normalized asset records", len(rows))
         stocks = await fetch_polygon_stocks(client)
