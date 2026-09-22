@@ -1,0 +1,3 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Editorial Policy", description: "How Bliss Finance presents market data and editorial information." };
+export default function EditorialPolicyPage() { return <main className="container legal"><p className="eyebrow">Editorial standards</p><h1>Editorial policy</h1><p>Bliss Finance presents market information from third-party providers. We aim to identify data sources, show update times, and distinguish factual market data from any explanatory content.</p><p>We do not publish personalized investment recommendations. Automated figures can be delayed or incomplete and should be independently verified before use.</p></main>; }

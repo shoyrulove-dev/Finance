@@ -1,0 +1,3 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Contact", description: "Contact Bliss Finance about data corrections and site feedback." };
+export default function ContactPage() { return <main className="container legal"><p className="eyebrow">Contact</p><h1>Get in touch</h1><p>For data corrections, technical feedback, or general questions about Bliss Finance, please contact the site operator through the public GitHub repository.</p><p>We review reports about inaccurate asset metadata, stale data, broken links, and accessibility issues.</p></main>; }

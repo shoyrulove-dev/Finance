@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -86,11 +86,17 @@ async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]
     if not key:
         return []
     rows = []
+    date_to = now().date()
+    date_from = date_to - timedelta(days=40)
     for symbol, name in STOCKS:
-        data = await get_json(client, f"https://api.massive.com/v2/aggs/ticker/{symbol}/prev", {"adjusted": "true", "apiKey": key})
-        result = (data.get("results") or [{}])[0]
+        data = await get_json(client, f"https://api.massive.com/v2/aggs/ticker/{symbol}/range/1/day/{date_from}/{date_to}", {"adjusted": "true", "sort": "asc", "limit": 40, "apiKey": key})
+        bars = data.get("results") or []
+        result = bars[-1] if bars else {}
         if result.get("c") is not None:
-            rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": name, "type": "stock", "active": True, "price": result["c"], "change24h": None, "volume24h": result.get("v"), "fetchedAt": now()})
+            previous = bars[-2].get("c") if len(bars) > 1 else None
+            change = ((result["c"] - previous) / previous * 100) if previous else None
+            history = [{"price": bar.get("c"), "volume24h": bar.get("v"), "timestamp": datetime.fromtimestamp(bar["t"] / 1000, timezone.utc)} for bar in bars if bar.get("c") is not None]
+            rows.append({"provider": "polygon", "providerId": symbol, "slug": symbol.lower().replace(".", "-"), "symbol": symbol, "name": name, "type": "stock", "active": True, "price": result["c"], "change24h": change, "volume24h": result.get("v"), "fetchedAt": now(), "history": history})
         await asyncio.sleep(12)
     return rows
 
@@ -113,11 +119,14 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
                  "change24h": row.get("change24h"), "marketCap": row.get("marketCap"),
                  "volume24h": row.get("volume24h"), "currency": "USD", "updatedAt": timestamp}
         price_ops.append(UpdateOne({"assetId": asset_id}, {"$set": price}, upsert=True))
-        history_ops.append(price | {"timestamp": timestamp})
+        snapshots = row.get("history") or [{"price": price["price"], "volume24h": price["volume24h"], "timestamp": timestamp}]
+        for snapshot in snapshots:
+            history = price | {"price": snapshot.get("price"), "volume24h": snapshot.get("volume24h"), "timestamp": snapshot["timestamp"]}
+            history_ops.append(UpdateOne({"assetId": asset_id, "timestamp": history["timestamp"]}, {"$set": history}, upsert=True))
     if asset_ops:
         db.assets.bulk_write(asset_ops, ordered=False)
         db.latest_prices.bulk_write(price_ops, ordered=False)
-        db.price_history.insert_many(history_ops)
+        db.price_history.bulk_write(history_ops, ordered=False)
     db.sync_runs.insert_one({"provider": "market-crawler", "status": "success", "count": len(rows), "startedAt": timestamp, "finishedAt": now()})
     client.close()
 
