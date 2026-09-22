@@ -2,6 +2,8 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial, sans-serif; }
 .container { max-width: 960px; margin: 0 auto; padding: 96px 24px; }
+.brand { margin-bottom: 82px; }
+.brand img { display: block; }
 .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; }
 h1 { max-width: 700px; font-size: clamp(42px, 8vw, 76px); line-height: 1.02; margin: 18px 0; }
 .intro { color: var(--muted); font-size: 20px; max-width: 560px; line-height: 1.6; }
