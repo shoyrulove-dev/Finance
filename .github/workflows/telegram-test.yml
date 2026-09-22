@@ -12,4 +12,6 @@ jobs:
         run: |
           test -n "$TELEGRAM_BOT_TOKEN"
           test -n "$TELEGRAM_CHAT_ID"
-          curl --fail --silent --show-error -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" -d chat_id="$TELEGRAM_CHAT_ID" --data-urlencode "text=Bliss Finance alert test successful. Crawler notifications are configured."
+          status=$(curl --silent --show-error -o telegram-response.json -w "%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" -d chat_id="$TELEGRAM_CHAT_ID" --data-urlencode "text=Bliss Finance alert test successful. Crawler notifications are configured.")
+          cat telegram-response.json
+          test "$status" = "200"
