@@ -11,28 +11,28 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://finance.blissbiovn.
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Bliss Finance — Global Market Data",
+    default: "Bliss Finance — Market Intelligence & Decision Tools",
     template: "%s | Bliss Finance"
   },
-  description: "Explore cryptocurrency and US stock prices, daily moves, market caps and historical trends in one clear view.",
+  description: "Explore crypto, stocks, RWA, prediction markets and practical tools for volatility, drawdown and stablecoin risk.",
   applicationName: "Bliss Finance",
   category: "finance",
-  keywords: ["crypto prices", "cryptocurrency market data", "bitcoin price", "crypto market cap", "financial data"],
+  keywords: ["crypto market tools", "prediction markets", "RWA tokens", "tokenized stocks", "stablecoin peg tracker", "bitcoin volatility"],
   authors: [{ name: "Bliss Finance" }],
   creator: "Bliss Finance",
   publisher: "Bliss Finance",
   openGraph: {
     type: "website",
     siteName: "Bliss Finance",
-    title: "Bliss Finance — Global Market Data",
-    description: "Explore crypto and US stock prices, market moves and historical trends.",
+    title: "Bliss Finance — Market Intelligence & Decision Tools",
+    description: "Market dashboards and decision tools for crypto, stocks, RWA, stablecoins and prediction markets.",
     url: siteUrl,
     locale: "en_US"
   },
   twitter: {
     card: "summary",
-    title: "Bliss Finance — Global Market Data",
-    description: "Explore crypto and US stock prices, market moves and historical trends."
+    title: "Bliss Finance — Market Intelligence & Decision Tools",
+    description: "Market dashboards and decision tools for crypto, stocks, RWA, stablecoins and prediction markets."
   },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
