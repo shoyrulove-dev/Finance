@@ -46,7 +46,7 @@ export default async function CryptoDetailPage({ params }: Props) {
   const { asset, price, history, related } = result;
   const change = price?.change24h as number | null;
   const schema = { "@context": "https://schema.org", "@type": "FinancialProduct", name: asset.name, tickerSymbol: asset.symbol, offers: price?.price ? { "@type": "Offer", price: price.price, priceCurrency: "USD", availability: "https://schema.org/InStock" } : undefined };
-  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [{ "@type": "Question", name: `What is the current ${asset.symbol} price?`, acceptedAnswer: { "@type": "Answer", text: `${asset.name} is currently priced at ${money(price?.price)} based on the latest available provider update.` } }, { "@type": "Question", name: `Where does the ${asset.symbol} data come from?`, acceptedAnswer: { "@type": "Answer", text: "Bliss Finance records automated market-data provider updates. Values may be delayed and are not investment advice." } }] };
+  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [{ "@type": "Question", name: `What is the current ${asset.symbol} price?`, acceptedAnswer: { "@type": "Answer", text: `${asset.name} is currently priced at ${money(price?.price)} based on the latest available market data.` } }, { "@type": "Question", name: `Where does the ${asset.symbol} data come from?`, acceptedAnswer: { "@type": "Answer", text: "Bliss Finance displays prices from market data sources. Values may be delayed and are not investment advice." } }] };
 
   return <main className="container">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />

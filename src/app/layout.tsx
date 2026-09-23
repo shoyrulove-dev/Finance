@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     default: "Bliss Finance — Global Market Data",
     template: "%s | Bliss Finance"
   },
-  description: "Clear, accessible crypto market data, prices, market metrics and historical trends for global investors.",
+  description: "Explore cryptocurrency and US stock prices, daily moves, market caps and historical trends in one clear view.",
   applicationName: "Bliss Finance",
   category: "finance",
   keywords: ["crypto prices", "cryptocurrency market data", "bitcoin price", "crypto market cap", "financial data"],
@@ -24,14 +24,14 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Bliss Finance",
     title: "Bliss Finance — Global Market Data",
-    description: "Clear, accessible crypto market data and historical trends.",
+    description: "Explore crypto and US stock prices, market moves and historical trends.",
     url: siteUrl,
     locale: "en_US"
   },
   twitter: {
     card: "summary",
     title: "Bliss Finance — Global Market Data",
-    description: "Clear, accessible crypto market data and historical trends."
+    description: "Explore crypto and US stock prices, market moves and historical trends."
   },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
