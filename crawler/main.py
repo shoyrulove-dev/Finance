@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
@@ -96,6 +97,39 @@ async def fetch_binance(client: httpx.AsyncClient) -> list[dict[str, Any]]:
             for item in data if item["symbol"].endswith("USDT") and item["symbol"][:-4] in symbols]
 
 
+async def fetch_coingecko_category(client: httpx.AsyncClient, category: str) -> list[dict[str, Any]]:
+    data = await get_json(client, "https://api.coingecko.com/api/v3/coins/markets", {
+        "vs_currency": "usd", "category": category, "order": "market_cap_desc",
+        "per_page": 50, "page": 1, "sparkline": "false",
+    })
+    return [{
+        "providerId": item.get("id"), "slug": item.get("id"), "symbol": str(item.get("symbol", "")).upper(),
+        "name": item.get("name"), "price": item.get("current_price"),
+        "change24h": item.get("price_change_percentage_24h"), "marketCap": item.get("market_cap"),
+        "volume24h": item.get("total_volume"), "image": item.get("image"),
+    } for item in data]
+
+
+async def fetch_polymarket(client: httpx.AsyncClient) -> list[dict[str, Any]]:
+    data = await get_json(client, "https://gamma-api.polymarket.com/markets", {
+        "active": "true", "closed": "false", "limit": 50, "order": "volume24hr", "ascending": "false",
+    })
+    rows = []
+    for item in data:
+        try:
+            outcomes = json.loads(item.get("outcomes") or "[]")
+            prices = [float(value) for value in json.loads(item.get("outcomePrices") or "[]")]
+        except (TypeError, ValueError, json.JSONDecodeError):
+            outcomes, prices = [], []
+        rows.append({
+            "providerId": item.get("conditionId") or item.get("id"), "slug": item.get("slug"),
+            "question": item.get("question"), "outcomes": outcomes, "prices": prices,
+            "volume24h": float(item.get("volume24hr") or 0), "liquidity": float(item.get("liquidity") or 0),
+            "endDate": item.get("endDate"), "url": f"https://polymarket.com/event/{item.get('slug')}",
+        })
+    return rows
+
+
 async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]]:
     key = os.getenv("MASSIVE_API_KEY") or os.getenv("POLYGON_API_KEY")
     if not key:
@@ -155,7 +189,7 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
     client.close()
 
 
-def write_market_brief() -> None:
+def write_market_brief() -> tuple[bool, dict[str, Any]]:
     """Store one daily snapshot so useful market briefs have stable archive URLs."""
     uri = os.getenv("MONGODB_URI")
     if not uri:
@@ -181,11 +215,67 @@ def write_market_brief() -> None:
 
     timestamp = now()
     date_key = timestamp.date().isoformat()
-    db.market_briefs.update_one({"date": date_key}, {"$set": {
+    brief = {
         "date": date_key, "crypto": leaders("crypto"), "stocks": leaders("stock"), "updatedAt": timestamp,
-    }}, upsert=True)
+    }
+    result = db.market_briefs.update_one({"date": date_key}, {"$set": brief}, upsert=True)
     log.info("Stored market brief for %s", date_key)
     client.close()
+    return result.upserted_id is not None, brief
+
+
+async def send_market_brief_telegram(client: httpx.AsyncClient, brief: dict[str, Any]) -> None:
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        return
+    crypto = brief.get("crypto") or []
+    stocks = brief.get("stocks") or []
+
+    def line(item: dict[str, Any]) -> str:
+        move = float(item.get("change24h") or 0)
+        return f"{item.get('symbol', '—')}: {move:+.2f}%"
+
+    sections = [f"Bliss Finance Market Brief — {brief['date']}"]
+    if crypto:
+        sections.append("Crypto leaders\n" + "\n".join(line(item) for item in crypto[:3]))
+    if stocks:
+        sections.append("Stock leaders\n" + "\n".join(line(item) for item in stocks[:3]))
+    sections.append(f"Read the full brief: https://finance.blissbiovn.com/market-brief/{brief['date']}")
+    response = await client.post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data={"chat_id": chat_id, "text": "\n\n".join(sections), "disable_web_page_preview": "true"},
+    )
+    response.raise_for_status()
+    log.info("Sent daily market brief to Telegram")
+
+
+def write_discovery_data(rwa: list[dict[str, Any]], tokenized: list[dict[str, Any]], predictions: list[dict[str, Any]]) -> None:
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        raise RuntimeError("MONGODB_URI is required")
+    client = MongoClient(uri)
+    db = client[os.getenv("MONGODB_DB", "finance")]
+    timestamp = now()
+    for category, rows in (("rwa", rwa), ("tokenized-stock", tokenized)):
+        db.category_markets.update_many({"category": category}, {"$set": {"active": False}})
+        if rows:
+            db.category_markets.bulk_write([UpdateOne({"category": category, "providerId": row["providerId"]}, {"$set": row | {"category": category, "active": True, "updatedAt": timestamp}}, upsert=True) for row in rows], ordered=False)
+    db.prediction_markets.update_many({}, {"$set": {"active": False}})
+    if predictions:
+        db.prediction_markets.bulk_write([UpdateOne({"providerId": row["providerId"]}, {"$set": row | {"active": True, "updatedAt": timestamp}}, upsert=True) for row in predictions], ordered=False)
+    log.info("Stored discovery data: %s RWA, %s tokenized stocks, %s prediction markets", len(rwa), len(tokenized), len(predictions))
+    client.close()
+
+
+async def refresh_discovery_data() -> None:
+    async with httpx.AsyncClient(timeout=30, headers={"User-Agent": "BlissFinanceCrawler/0.1"}) as client:
+        rwa = await fetch_coingecko_category(client, "real-world-assets-rwa")
+        await asyncio.sleep(4)
+        tokenized = await fetch_coingecko_category(client, "tokenized-stock")
+        await asyncio.sleep(4)
+        predictions = await fetch_polymarket(client)
+        write_discovery_data(rwa, tokenized, predictions)
 
 
 async def main() -> None:
@@ -208,7 +298,19 @@ async def main() -> None:
         if stocks:
             write_to_mongodb(stocks)
             log.info("Stored %s stock records", len(stocks))
-        write_market_brief()
+        is_new_brief, brief = write_market_brief()
+        if is_new_brief:
+            try:
+                await send_market_brief_telegram(client, brief)
+            except Exception as error:
+                log.warning("Daily Telegram brief failed: %s", error)
+        if now().hour % 6 == 4:
+            rwa = await fetch_coingecko_category(client, "real-world-assets-rwa")
+            await asyncio.sleep(4)
+            tokenized = await fetch_coingecko_category(client, "tokenized-stock")
+            await asyncio.sleep(4)
+            predictions = await fetch_polymarket(client)
+            write_discovery_data(rwa, tokenized, predictions)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,8 @@ const tools = [
   ["Drawdown", "See how far an asset trades below its observed peak.", "/tools/drawdown"],
   ["Dividend income", "Estimate annual, quarterly and monthly dividend income.", "/tools/dividends"],
   ["Crypto converter", "Convert a cryptocurrency amount to US dollars.", "/convert/bitcoin"],
+  ["RWA markets", "Track real-world asset tokens and tokenized stocks.", "/markets/rwa"],
+  ["Prediction markets", "Explore active markets ranked by volume and liquidity.", "/markets/prediction-markets"],
 ] as const;
 
 export default function ToolsPage() {
