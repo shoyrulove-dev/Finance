@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Daily market brief | Bliss Finance",
 function pct(value: unknown) { const n = Number(value); return Number.isFinite(n) ? `${n >= 0 ? "+" : ""}${n.toFixed(2)}%` : "—"; }
 export default async function MarketBriefPage() {
   const db = await getDatabase();
-  const [assets, prices] = await Promise.all([db.collection("assets").find({ active: true }, { projection: { slug: 1, symbol: 1, name: 1, type: 1 } }).toArray(), db.collection("latest_prices").find({}).sort({ updatedAt: -1 }).toArray()]);
+  const [assets, prices] = await Promise.all([db.collection("assets").find({ active: true }, { projection: { slug: 1, symbol: 1, name: 1, type: 1, provider: 1, providerId: 1 } }).toArray(), db.collection("latest_prices").find({}).sort({ updatedAt: -1 }).toArray()]);
   const map = new Map(assets.map((a: any) => [`${a.provider}:${a.providerId}`, a]));
   const crypto = prices.filter((p: any) => map.get(p.assetId)?.type === "crypto").sort((a: any, b: any) => Number(b.change24h || 0) - Number(a.change24h || 0));
   const stocks = prices.filter((p: any) => map.get(p.assetId)?.type === "stock").sort((a: any, b: any) => Number(b.change24h || 0) - Number(a.change24h || 0));

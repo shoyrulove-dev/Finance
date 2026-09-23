@@ -4,6 +4,7 @@ import { GoogleAnalytics } from "@/components/google-analytics";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { CookieConsent } from "@/components/cookie-consent";
+import { NativeAd } from "@/components/native-ad";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://finance.blissbiovn.com";
 
@@ -41,5 +42,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><SiteHeader />{children}<SiteFooter /><CookieConsent /><GoogleAnalytics /></body></html>;
+  return <html lang="en"><body><SiteHeader />{children}<div className="site-ad"><NativeAd /></div><SiteFooter /><CookieConsent /><GoogleAnalytics /></body></html>;
 }

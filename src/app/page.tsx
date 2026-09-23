@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
-import { NativeAd } from "@/components/native-ad";
 
 export const revalidate = 300;
 
@@ -45,7 +44,6 @@ export default async function HomePage() {
       <section className="market-board"><div className="board-heading"><div><h3>Cryptocurrency prices</h3><p>Leading assets by market cap</p></div><Link href="/crypto">View all crypto →</Link></div><div className="market-table-wrap"><table className="market-table"><thead><tr><th>#</th><th>Asset</th><th>Price</th><th>24h</th><th>Market cap</th></tr></thead><tbody>{cryptoPrices.map((price, index) => { const asset = cryptoMap.get(price.assetId); return asset && <tr key={price.assetId}><td className="rank">{index + 1}</td><td><Link className="asset-cell" href={`/crypto/${asset.slug}`}><span className="asset-avatar">{String(asset.symbol).slice(0, 1)}</span><span><strong>{asset.name}</strong><small>{asset.symbol}</small></span></Link></td><td className="number-cell">{money(price.price)}</td><td className={`number-cell ${changeClass(price.change24h)}`}>{change(price.change24h)}</td><td className="number-cell">{money(price.marketCap)}</td></tr>; })}</tbody></table></div>{cryptoPrices.length === 0 && <p className="board-empty">Market prices will appear here shortly.</p>}</section>
       <div className="market-side"><section className="market-board"><div className="board-heading"><div><h3>US stocks</h3><p>Latest end-of-day prices</p></div><Link href="/stocks">View all →</Link></div><div className="stock-list">{stockPrices.map((price) => { const asset = stockMap.get(price.assetId); return asset && <Link href={`/stocks/${String(asset.symbol).toLowerCase()}`} key={price.assetId} className="stock-item"><span className="stock-symbol">{asset.symbol}</span><span className="stock-name">{asset.name}</span><strong>{money(price.price)}</strong><span className={changeClass(price.change24h)}>{change(price.change24h)}</span></Link>; })}</div>{stockPrices.length === 0 && <p className="board-empty">Stock prices will appear here shortly.</p>}</section><section className="market-note"><span className="market-note-icon">↗</span><div><h3>Look beyond the price</h3><p>Open any asset for historical prices, market context, and source information.</p><Link href="/search">Explore assets →</Link></div></section></div>
     </div>
-    <div className="market-ad"><NativeAd /></div>
     <p className="market-disclaimer">Prices may be delayed. US stock prices are end-of-day. This information is for reference, not investment advice.</p>
   </main>;
 }
