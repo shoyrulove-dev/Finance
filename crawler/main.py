@@ -155,6 +155,39 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
     client.close()
 
 
+def write_market_brief() -> None:
+    """Store one daily snapshot so useful market briefs have stable archive URLs."""
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        raise RuntimeError("MONGODB_URI is required")
+    client = MongoClient(uri)
+    db = client[os.getenv("MONGODB_DB", "finance")]
+    assets = list(db.assets.find({"active": True}, {"provider": 1, "providerId": 1, "slug": 1, "symbol": 1, "name": 1, "type": 1}))
+    asset_map = {f"{asset.get('provider')}:{asset.get('providerId')}": asset for asset in assets}
+    prices = list(db.latest_prices.find({"change24h": {"$ne": None}}))
+
+    def leaders(asset_type: str) -> list[dict[str, Any]]:
+        candidates = []
+        for price in prices:
+            asset = asset_map.get(price.get("assetId"))
+            if not asset or asset.get("type") != asset_type:
+                continue
+            candidates.append({
+                "slug": asset.get("slug"), "symbol": asset.get("symbol"), "name": asset.get("name"),
+                "price": price.get("price"), "change24h": price.get("change24h"),
+                "marketCap": price.get("marketCap"), "volume24h": price.get("volume24h"),
+            })
+        return sorted(candidates, key=lambda item: item.get("change24h") or 0, reverse=True)[:5]
+
+    timestamp = now()
+    date_key = timestamp.date().isoformat()
+    db.market_briefs.update_one({"date": date_key}, {"$set": {
+        "date": date_key, "crypto": leaders("crypto"), "stocks": leaders("stock"), "updatedAt": timestamp,
+    }}, upsert=True)
+    log.info("Stored market brief for %s", date_key)
+    client.close()
+
+
 async def main() -> None:
     async with httpx.AsyncClient(timeout=20, headers={"User-Agent": "BlissFinanceCrawler/0.1"}) as client:
         rows: list[dict[str, Any]] = []
@@ -175,6 +208,7 @@ async def main() -> None:
         if stocks:
             write_to_mongodb(stocks)
             log.info("Stored %s stock records", len(stocks))
+        write_market_brief()
 
 
 if __name__ == "__main__":
