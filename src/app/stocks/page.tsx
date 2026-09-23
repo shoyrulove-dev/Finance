@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
 
-export const metadata: Metadata = { title: "US Stock Prices", description: "Explore latest end-of-day prices and daily moves for popular US stocks." };
+export const metadata: Metadata = { title: "US Stock Prices", description: "Explore latest end-of-day prices and daily moves for popular US stocks.", alternates: { canonical: "/stocks" } };
 export const revalidate = 900;
 export default async function StocksPage() {
   const db = await getDatabase();

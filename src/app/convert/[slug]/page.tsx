@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await load(slug);
   if (!result) return { title: "Converter not found" };
-  return { title: `${result.asset.symbol} to USD Converter`, description: `Convert ${result.asset.name} (${result.asset.symbol}) to USD using the latest market price.`, alternates: { canonical: `/convert/${result.asset.slug}` } };
+  return { title: `${result.asset.symbol} to USD Converter`, description: `Convert ${result.asset.name} (${result.asset.symbol}) to USD. View the current exchange rate, common conversion amounts, and indicative dollar values.`, alternates: { canonical: `/convert/${result.asset.slug}` } };
 }
 
 export default async function ConverterPage({ params, searchParams }: Props) {

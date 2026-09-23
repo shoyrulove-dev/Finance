@@ -1,3 +1,3 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Financial Disclaimer", description: "Important financial information disclaimer for Bliss Finance." };
+export const metadata: Metadata = { title: "Financial Disclaimer", description: "Important financial information disclaimer for Bliss Finance.", alternates: { canonical: "/disclaimer" } };
 export default function DisclaimerPage() { return <main className="container legal"><a className="back" href="/">← Bliss Finance</a><p className="eyebrow">Important information</p><h1>Financial disclaimer</h1><p>Bliss Finance provides general market information for educational and informational purposes only. Nothing on this website is financial, investment, legal, tax or trading advice.</p><p>Prices and market data can be delayed, incomplete or inaccurate. Do your own research before making financial decisions.</p></main>; }

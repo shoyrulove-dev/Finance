@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
 
-export const metadata: Metadata = { title: "Crypto Prices", description: "Compare cryptocurrency prices, 24-hour changes, market caps and trading volume." };
+export const metadata: Metadata = { title: "Crypto Prices", description: "Compare cryptocurrency prices, 24-hour changes, market caps and trading volume.", alternates: { canonical: "/crypto" } };
 export const revalidate = 300;
 type Props = { searchParams: Promise<{ view?: string }> };
 function money(value: unknown) { const n = Number(value); return value == null || !Number.isFinite(n) ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n < 1 ? 6 : 2, notation: n >= 1_000_000 ? "compact" : "standard" }).format(n); }

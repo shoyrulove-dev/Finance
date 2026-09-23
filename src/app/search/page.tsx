@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
-export const metadata: Metadata = { title: "Search Markets", description: "Search cryptocurrency and US stock market data." };
+export const metadata: Metadata = { title: "Search Markets", description: "Search cryptocurrency and US stock market data.", robots: { index: false, follow: true } };
 export const dynamic = "force-dynamic";
 type Props = { searchParams: Promise<{ q?: string }> };
 function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }

@@ -5,7 +5,7 @@ import { getCryptoBundle } from "@/lib/tool-data";
 import { formatPrice, numberQuery } from "@/lib/market-tools";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Crypto drawdown calculator", description: "Calculate how far a cryptocurrency trades below its highest stored price observation." };
+export const metadata: Metadata = { title: "Crypto drawdown calculator", description: "Calculate how far a cryptocurrency trades below its highest stored price observation.", alternates: { canonical: "/tools/drawdown" } };
 
 export default async function DrawdownPage({ searchParams }: { searchParams: Promise<{ asset?: string; days?: string }> }) {
   const query = await searchParams; const slug = (query.asset || "bitcoin").trim().toLowerCase(); const days = numberQuery(query.days, 90, 7, 365); const bundle = await getCryptoBundle(slug, days); const prices = (bundle?.history || []).map((item: any) => Number(item.price)).filter(Number.isFinite).reverse(); const peak = prices.length ? Math.max(...prices) : 0; const current = Number(bundle?.price?.price); const drawdown = peak > 0 && Number.isFinite(current) ? ((current - peak) / peak) * 100 : null;

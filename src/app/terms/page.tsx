@@ -1,3 +1,3 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Terms of Use", description: "Terms of use for Bliss Finance." };
+export const metadata: Metadata = { title: "Terms of Use", description: "Terms of use for Bliss Finance.", alternates: { canonical: "/terms" } };
 export default function TermsPage() { return <main className="container legal"><a className="back" href="/">← Bliss Finance</a><p className="eyebrow">Terms</p><h1>Terms of use</h1><p>By using Bliss Finance, you acknowledge that market data is provided for general information and may change without notice.</p><p>You agree not to misuse the service or treat displayed information as personalized financial advice.</p></main>; }

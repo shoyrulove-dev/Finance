@@ -5,7 +5,7 @@ import { getCryptoBundle } from "@/lib/tool-data";
 import { numberQuery, standardDeviation } from "@/lib/market-tools";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Crypto volatility calculator", description: "Calculate recent cryptocurrency volatility from stored daily price observations." };
+export const metadata: Metadata = { title: "Crypto volatility calculator", description: "Calculate recent cryptocurrency volatility from stored daily price observations.", alternates: { canonical: "/tools/volatility" } };
 
 export default async function VolatilityPage({ searchParams }: { searchParams: Promise<{ asset?: string; days?: string }> }) {
   const query = await searchParams; const slug = (query.asset || "bitcoin").trim().toLowerCase(); const days = numberQuery(query.days, 30, 7, 90); const bundle = await getCryptoBundle(slug, days + 1);

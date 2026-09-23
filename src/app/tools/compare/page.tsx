@@ -4,7 +4,7 @@ import { getCryptoRows } from "@/lib/tool-data";
 import { formatCompact, formatPrice } from "@/lib/market-tools";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Compare crypto assets", description: "Compare cryptocurrency prices, daily performance, market capitalization and volume." };
+export const metadata: Metadata = { title: "Compare crypto assets", description: "Compare cryptocurrency prices, daily performance, market capitalization and volume.", alternates: { canonical: "/tools/compare" } };
 
 export default async function ComparePage({ searchParams }: { searchParams: Promise<{ assets?: string }> }) {
   const query = await searchParams;

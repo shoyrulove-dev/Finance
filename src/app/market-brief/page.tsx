@@ -5,7 +5,7 @@ import { getDatabase } from "@/lib/mongodb";
 import { JsonLd } from "@/components/json-ld";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Daily market brief", description: "A concise daily snapshot of crypto and US stock market moves." };
+export const metadata: Metadata = { title: "Daily market brief", description: "A concise daily snapshot of crypto and US stock market moves.", alternates: { canonical: "/market-brief" } };
 function pct(value: unknown) { const number = Number(value); return Number.isFinite(number) ? `${number >= 0 ? "+" : ""}${number.toFixed(2)}%` : "—"; }
 
 export default async function MarketBriefPage() {

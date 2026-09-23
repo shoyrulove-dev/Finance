@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getDatabase } from "@/lib/mongodb";
 
-export const metadata: Metadata = { title: "Data Status", description: "Operational status and market data freshness for Bliss Finance." };
+export const metadata: Metadata = { title: "Data Status", description: "Operational status and market data freshness for Bliss Finance.", robots: { index: false, follow: true } };
 export const revalidate = 60;
 
 export default async function StatusPage() {

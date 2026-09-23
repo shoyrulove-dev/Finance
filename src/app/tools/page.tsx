@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Market decision tools", description: "Practical crypto and stock calculators for comparison, volatility, drawdown, stablecoins and dividend income." };
+export const metadata: Metadata = { title: "Market decision tools", description: "Practical crypto and stock calculators for comparison, volatility, drawdown, stablecoins and dividend income.", alternates: { canonical: "/tools" } };
 const tools = [
   ["Compare assets", "Compare price, daily change, market cap and volume.", "/tools/compare"],
   ["Stablecoin peg", "Track how closely major stablecoins trade to one US dollar.", "/tools/stablecoins"],
