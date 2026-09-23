@@ -75,7 +75,7 @@ export default async function HomePage() {
       ],
     }} />
     <section className="market-intro">
-      <div><p className="eyebrow">Market intelligence &amp; decision tools</p><h1>See what matters in markets.</h1><p>Track crypto and stocks, then explore emerging themes, market-implied probabilities and practical risk metrics.</p><div className="hero-actions"><Link href={"/markets/prediction-markets" as any}>Explore prediction markets</Link><Link href={"/tools" as any}>Open decision tools</Link></div></div>
+      <div><p className="eyebrow">Market intelligence &amp; decision tools</p><h1>See what matters in markets.</h1><p>Track markets, explore emerging themes, and measure risk with practical tools.</p><div className="hero-actions"><Link href={"/markets/prediction-markets" as any}>Explore prediction markets</Link><Link href={"/tools" as any}>Open decision tools</Link></div></div>
       <form className="market-search" action="/search"><label htmlFor="market-query">Find an asset</label><div><input id="market-query" name="q" placeholder="Search Bitcoin, BTC, Apple..." aria-label="Search crypto and stocks" /><button type="submit">Search</button></div></form>
     </section>
     <div className="market-meta"><span className="market-dot" aria-hidden="true" />Latest data: {lastUpdated} UTC <Link href="/data-sources">How market data is sourced →</Link></div>
