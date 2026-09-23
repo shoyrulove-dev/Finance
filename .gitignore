@@ -5,6 +5,7 @@ out/
 .env.*
 !.env.example
 *.log
+*.tsbuildinfo
 __pycache__/
 .venv/
 
