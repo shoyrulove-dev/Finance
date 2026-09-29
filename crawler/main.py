@@ -23,6 +23,9 @@ ASSETS = [
 INITIAL_ASSET_LIMIT = 100
 HISTORICAL_CRYPTO_LIMIT = 20
 STOCKS = [("AAPL", "Apple"), ("MSFT", "Microsoft"), ("NVDA", "NVIDIA"), ("AMZN", "Amazon"), ("GOOGL", "Alphabet"), ("META", "Meta Platforms"), ("TSLA", "Tesla"), ("BRK.B", "Berkshire Hathaway"), ("JPM", "JPMorgan Chase"), ("V", "Visa"), ("WMT", "Walmart"), ("LLY", "Eli Lilly"), ("AVGO", "Broadcom"), ("ORCL", "Oracle"), ("NFLX", "Netflix")]
+PROVIDER_PRIORITY = {"coingecko": 0, "coinmarketcap": 1, "binance": 2, "polygon": 0}
+CRYPTO_SLUG_BY_SYMBOL = {symbol: slug for slug, symbol in ASSETS}
+LEGACY_SLUG_ALIASES = {"bnb": "binancecoin", "avalanche": "avalanche-2"}
 
 
 def now() -> datetime:
@@ -81,7 +84,8 @@ async def fetch_coinmarketcap(client: httpx.AsyncClient) -> list[dict[str, Any]]
     result = []
     for symbol, item in data.get("data", {}).items():
         quote = item.get("quote", {}).get("USD", {})
-        result.append({"provider": "coinmarketcap", "providerId": str(item["id"]), "slug": item["slug"],
+        result.append({"provider": "coinmarketcap", "providerId": str(item["id"]),
+                       "slug": CRYPTO_SLUG_BY_SYMBOL.get(symbol, item["slug"]),
                        "symbol": symbol, "name": item["name"], "type": "crypto", "active": True,
                        "price": quote.get("price"), "change24h": quote.get("percent_change_24h"),
                        "marketCap": quote.get("market_cap"), "volume24h": quote.get("volume_24h"), "fetchedAt": now()})
@@ -91,7 +95,9 @@ async def fetch_coinmarketcap(client: httpx.AsyncClient) -> list[dict[str, Any]]
 async def fetch_binance(client: httpx.AsyncClient) -> list[dict[str, Any]]:
     data = await get_json(client, os.getenv("BINANCE_BASE_URL", "https://api.binance.com") + "/api/v3/ticker/24hr", {})
     symbols = {symbol for _, symbol in ASSETS}
-    return [{"provider": "binance", "providerId": item["symbol"], "symbol": item["symbol"].removesuffix("USDT"),
+    return [{"provider": "binance", "providerId": item["symbol"],
+             "slug": CRYPTO_SLUG_BY_SYMBOL.get(item["symbol"].removesuffix("USDT"), item["symbol"].lower()),
+             "symbol": item["symbol"].removesuffix("USDT"),
              "price": float(item["lastPrice"]), "change24h": float(item["priceChangePercent"]),
              "volume24h": float(item["quoteVolume"]), "fetchedAt": now()}
             for item in data if item["symbol"].endswith("USDT") and item["symbol"][:-4] in symbols]
@@ -166,13 +172,50 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
     client = MongoClient(uri)
     db = client[os.getenv("MONGODB_DB", "finance")]
     timestamp = now()
-    asset_ops, price_ops, history_ops = [], [], []
+    # A public-facing asset has one canonical slug even when its current quote
+    # comes from a fallback provider. Pick the best row for each slug before
+    # building writes so CoinMarketCap/Binance cannot create duplicate assets.
+    selected: dict[str, dict[str, Any]] = {}
     for row in rows:
-        asset_id = f"{row['provider']}:{row['providerId']}"
-        asset_ops.append(UpdateOne({"provider": row["provider"], "providerId": row["providerId"]}, {"$set": {
-            "slug": row.get("slug", row["providerId"]), "symbol": row.get("symbol"), "name": row.get("name", row.get("symbol")),
-            "type": row.get("type", "crypto"), "active": True, "profile": row.get("profile", {}), "updatedAt": timestamp,
-        }}, upsert=True))
+        slug = str(row.get("slug") or row.get("providerId") or "").lower()
+        if not slug:
+            continue
+        current = selected.get(slug)
+        if current is None or PROVIDER_PRIORITY.get(str(row.get("provider")), 99) < PROVIDER_PRIORITY.get(str(current.get("provider")), 99):
+            selected[slug] = row | {"slug": slug}
+
+    existing_by_slug = {
+        asset["slug"]: asset
+        for asset in db.assets.find(
+            {"slug": {"$in": list(selected)}},
+            {"slug": 1, "provider": 1, "providerId": 1},
+        )
+    }
+    asset_ops, price_ops, history_ops = [], [], []
+    for slug, row in selected.items():
+        existing = existing_by_slug.get(slug)
+        canonical_provider = existing.get("provider") if existing else row["provider"]
+        canonical_provider_id = existing.get("providerId") if existing else row["providerId"]
+        asset_id = f"{canonical_provider}:{canonical_provider_id}"
+        asset_update: dict[str, Any] = {
+            "active": True,
+            "dataProvider": row["provider"],
+            "updatedAt": timestamp,
+        }
+        if row.get("profile"):
+            asset_update["profile"] = row["profile"]
+        asset_ops.append(UpdateOne(
+            {"slug": slug},
+            {
+                "$set": asset_update,
+                "$setOnInsert": {
+                    "provider": row["provider"], "providerId": row["providerId"], "slug": slug,
+                    "symbol": row.get("symbol"), "name": row.get("name", row.get("symbol")),
+                    "type": row.get("type", "crypto"),
+                },
+            },
+            upsert=True,
+        ))
         price = {"assetId": asset_id, "provider": row["provider"], "price": row.get("price"),
                  "change24h": row.get("change24h"), "marketCap": row.get("marketCap"),
                  "volume24h": row.get("volume24h"), "currency": "USD", "updatedAt": timestamp}
@@ -185,7 +228,13 @@ def write_to_mongodb(rows: list[dict[str, Any]]) -> None:
         db.assets.bulk_write(asset_ops, ordered=False)
         db.latest_prices.bulk_write(price_ops, ordered=False)
         db.price_history.bulk_write(history_ops, ordered=False)
-    db.sync_runs.insert_one({"provider": "market-crawler", "status": "success", "count": len(rows), "startedAt": timestamp, "finishedAt": now()})
+    stale_aliases = [alias for alias, canonical in LEGACY_SLUG_ALIASES.items() if canonical in selected]
+    if stale_aliases:
+        db.assets.update_many(
+            {"slug": {"$in": stale_aliases}, "active": True},
+            {"$set": {"active": False, "supersededAt": timestamp}},
+        )
+    db.sync_runs.insert_one({"provider": "market-crawler", "status": "success", "count": len(selected), "startedAt": timestamp, "finishedAt": now()})
     client.close()
 
 

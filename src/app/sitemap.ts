@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const db = await getDatabase();
     const [assets, stocks, briefs, latestPrice, latestRwa, latestPrediction, latestBrief] = await Promise.all([
-      db.collection("assets").find({ type: "crypto", active: true, provider: "coingecko" }, { projection: { slug: 1, updatedAt: 1 } }).toArray(),
+      db.collection("assets").find({ type: "crypto", active: true, provider: { $ne: "polygon" } }, { projection: { slug: 1, updatedAt: 1 } }).toArray(),
       db.collection("assets").find({ type: "stock", active: true }, { projection: { symbol: 1, updatedAt: 1 } }).toArray(),
       db.collection("market_briefs").find({}, { projection: { date: 1, updatedAt: 1 } }).sort({ date: -1 }).limit(90).toArray(),
       db.collection("latest_prices").findOne({}, { sort: { updatedAt: -1 }, projection: { updatedAt: 1 } }),
