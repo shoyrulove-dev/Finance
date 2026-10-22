@@ -34,16 +34,25 @@ def now() -> datetime:
 
 async def get_json(client: httpx.AsyncClient, url: str, params: dict[str, Any], headers: dict[str, str] | None = None) -> Any:
     for attempt in range(4):
-        response = await client.get(url, params=params, headers=headers)
+        try:
+            response = await client.get(url, params=params, headers=headers)
+        except httpx.TransportError as error:
+            if attempt == 3:
+                raise
+            delay = min(16, 2**attempt)
+            log.warning("Network error from %s (%s); retrying in %ss", url, type(error).__name__, delay)
+            await asyncio.sleep(delay)
+            continue
         if response.status_code in (429, 500, 502, 503, 504):
+            if attempt == 3:
+                response.raise_for_status()
             delay = min(16, 2**attempt)
             log.warning("%s from %s; retrying in %ss", response.status_code, url, delay)
             await asyncio.sleep(delay)
             continue
         response.raise_for_status()
         return response.json()
-    response.raise_for_status()
-    return None
+    raise RuntimeError(f"Request retries exhausted for {url}")
 
 
 async def fetch_coingecko(client: httpx.AsyncClient) -> list[dict[str, Any]]:
@@ -144,7 +153,12 @@ async def fetch_polygon_stocks(client: httpx.AsyncClient) -> list[dict[str, Any]
     date_to = now().date()
     date_from = date_to - timedelta(days=40)
     for symbol, name in STOCKS:
-        data = await get_json(client, f"https://api.massive.com/v2/aggs/ticker/{symbol}/range/1/day/{date_from}/{date_to}", {"adjusted": "true", "sort": "asc", "limit": 40, "apiKey": key})
+        try:
+            data = await get_json(client, f"https://api.massive.com/v2/aggs/ticker/{symbol}/range/1/day/{date_from}/{date_to}", {"adjusted": "true", "sort": "asc", "limit": 40, "apiKey": key})
+        except Exception as error:
+            log.warning("Massive price unavailable for %s after retries: %s", symbol, error)
+            await asyncio.sleep(12)
+            continue
         bars = data.get("results") or []
         result = bars[-1] if bars else {}
         if result.get("c") is not None:
