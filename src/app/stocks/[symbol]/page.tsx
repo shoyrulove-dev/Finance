@@ -1,10 +1,11 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/lib/mongodb";
 import { PriceChart } from "@/components/price-chart";
 
-export const revalidate = 3600;
 type Props = { params: Promise<{ symbol: string }> };
 type Profile = { industry?: string; marketCap?: number; description?: string; primaryExchange?: string; website?: string };
 async function load(symbol: string) { const db = await getDatabase(); const asset = await db.collection("assets").findOne({ provider: "polygon", symbol: symbol.toUpperCase(), active: true }); if (!asset) return null; const assetId = `polygon:${asset.providerId}`; const [price, history] = await Promise.all([db.collection("latest_prices").findOne({ assetId }), db.collection("price_history").find({ assetId }).sort({ timestamp: -1 }).limit(35).toArray()]); return { asset, price, history }; }

@@ -1,8 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/lib/mongodb";
 
-export const revalidate = 3600;
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ amount?: string }> };
 
 async function load(slug: string) {

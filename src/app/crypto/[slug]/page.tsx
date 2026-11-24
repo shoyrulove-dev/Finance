@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,7 +7,6 @@ import { getDatabase } from "@/lib/mongodb";
 import { PriceChart } from "@/components/price-chart";
 import { AffiliateCta } from "@/components/affiliate-cta";
 
-export const revalidate = 3600;
 type Props = { params: Promise<{ slug: string }> };
 function money(value: unknown) { const n = Number(value); return value == null || !Number.isFinite(n) ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n < 1 ? 8 : 2, notation: n >= 1_000_000 ? "compact" : "standard" }).format(n); }
 async function load(slug: string) { const db = await getDatabase(); const asset = await db.collection("assets").findOne({ slug, type: "crypto", active: true }); if (!asset) return null; const assetId = `${asset.provider}:${asset.providerId}`; const [price, history, related] = await Promise.all([db.collection("latest_prices").findOne({ assetId }), db.collection("price_history").find({ assetId }).sort({ timestamp: -1 }).limit(30).toArray(), db.collection("assets").find({ type: "crypto", active: true, slug: { $ne: slug }, provider: { $ne: "polygon" } }, { projection: { slug: 1, symbol: 1, name: 1 } }).limit(6).toArray()]); return { asset, price, history, related }; }

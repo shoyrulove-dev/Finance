@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
 import { getDatabase } from "@/lib/mongodb";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Crypto Market Tools, RWA & Prediction Markets",
@@ -35,6 +35,9 @@ function probability(market: any) {
 }
 
 export default async function HomePage() {
+  if (!process.env.MONGODB_URI) {
+    return <main className="data-page"><h1>Bliss Finance</h1><p>Market data is temporarily unavailable while the service is being configured.</p></main>;
+  }
   const db = await getDatabase();
   const [cryptoAssets, stockAssets, latest, rwa, tokenized, predictions] = await Promise.all([
     db.collection("assets").find({ type: "crypto", active: true, provider: { $ne: "polygon" } }, { projection: { provider: 1, providerId: 1, slug: 1, symbol: 1, name: 1 } }).toArray(),
